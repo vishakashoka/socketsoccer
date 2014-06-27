@@ -1,0 +1,58 @@
+<html>
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+
+    <script>
+        $(function(){
+            var iosocket = io.connect();
+ 
+            iosocket.on('connect', function () {
+                console.log('Handshake successful on client side.');
+
+                $('#msgList').append($('<li>Connected</li>'));
+                
+                // Once connection is established, setup events listeners
+                // for all events our app expects to be received from server
+
+                // Received a 'message' from server and send an 'ack-message' back
+                iosocket.on('message', function(message) {
+                    $('#msgList').append($('<li></li>').text(message));
+                    iosocket.emit('ack-message', 'Client received msg : '+message);
+                });
+                
+                // Received acknowledgement message from server
+                iosocket.on('ack-message', function(ackMessage) {
+                   $('#msgList').append($('<li></li>').text(ackMessage));
+                })
+
+                // Server got disconnected. Wanna retry ?
+                iosocket.on('disconnect', function() {
+                    $('#msgList').append('<li>Disconnected</li>');
+                });
+
+                // Received 'ign hack event' custom event
+                iosocket.on('ign-hack-event', function(data) {
+                    $('#msgList').append($('<li></li>').text(data));
+                });
+            });
+ 
+            $('#inputBox').keypress(function(event) {
+                if(event.which == 13) {
+                    event.preventDefault();
+                    iosocket.send($('#inputBox').val());
+                    $('#msgList').append($('<li></li>').text($('#inputBox').val()));
+                    $('#inputBox').val('');
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+Chat List: <ul id="msgList"></ul>
+
+
+<input type="text" id="inputBox">
+</body>
+</html>
